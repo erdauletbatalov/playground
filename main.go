@@ -61,12 +61,11 @@ func handleConn(conn net.Conn) {
 }
 
 func clientWriter(conn net.Conn, ch <-chan string, exit chan<- struct{}) {
-Loop:
 	for {
 		select {
 		case <-time.After(10 * time.Second):
 			exit <- struct{}{}
-			break Loop
+			return
 		case msg := <-ch:
 			fmt.Fprintln(conn, msg) // NOTE: ignoring network errors
 		}
