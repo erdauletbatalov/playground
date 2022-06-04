@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"time"
 )
 
 //!+broadcaster
@@ -18,6 +19,7 @@ var (
 	entering = make(chan client)
 	leaving  = make(chan client)
 	messages = make(chan string) // all incoming client messages
+	names    = make(map[string]string)
 )
 
 func broadcaster() {
@@ -45,28 +47,52 @@ func broadcaster() {
 
 //!+handleConn
 func handleConn(conn net.Conn) {
-	ch := make(chan string) // outgoing client messages
-	go clientWriter(conn, ch)
-
 	who := conn.RemoteAddr().String()
-	ch <- "You are " + who
-	messages <- who + " has arrived"
-	entering <- ch
+	ch := make(chan string) // outgoing client messages
+	exit := make(chan struct{})
 
-	input := bufio.NewScanner(conn)
-	for input.Scan() {
-		messages <- who + ": " + input.Text()
-	}
+	go clientWriter(conn, ch, exit)
+	go clientReader(conn, who, ch)
+
 	// NOTE: ignoring potential errors from input.Err()
+	<-exit
 
-	leaving <- ch
-	messages <- who + " has left"
 	conn.Close()
 }
 
-func clientWriter(conn net.Conn, ch <-chan string) {
-	for msg := range ch {
-		fmt.Fprintln(conn, msg) // NOTE: ignoring network errors
+func clientWriter(conn net.Conn, ch <-chan string, exit chan<- struct{}) {
+Loop:
+	for {
+		select {
+		case <-time.After(10 * time.Second):
+			exit <- struct{}{}
+			break Loop
+		case msg := <-ch:
+			fmt.Fprintln(conn, msg) // NOTE: ignoring network errors
+		}
+	}
+}
+
+func clientReader(conn net.Conn, who string, ch chan string) {
+	var name string
+	conn.Write([]byte("Enter your name: "))
+	input := bufio.NewScanner(conn)
+	for input.Scan() {
+		if _, ok := names[who]; !ok {
+			name = input.Text()
+			names[who] = name
+			ch <- "You are " + name
+			conn.Write([]byte(fmt.Sprintf("%s has arrived, %d connections now", name, len(names))))
+			messages <- fmt.Sprintf("%s has arrived, %d connections now", name, len(names))
+			entering <- ch
+			continue
+		}
+		messages <- name + ": " + input.Text()
+	}
+	if _, ok := names[who]; ok {
+		leaving <- ch
+		messages <- name + " has left"
+		delete(names, who)
 	}
 }
 
