@@ -1,22 +1,15 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"log"
+	"net/http"
+)
 
 func main() {
-	m := make(map[int]string, 2)
-	arr := []int{1, 2, 3, 4}
-	fmt.Println(arr)
-	appendSlice(arr[1:])
-	fmt.Println(arr)
+	http.HandleFunc("/", func(res http.ResponseWriter, req *http.Request) {
+		fmt.Fprint(res, "hello world!")
+	})
 
-}
-
-func appendSlice(arr []int) {
-	arr[0] = 0
-	arr[1] = 0
-
-	for i := 0; i < 2; i++ {
-		arr = append(arr, i)
-	}
-	arr[0] = 0
+	log.Fatal(http.ListenAndServeTLS(":9000", "localhost.crt", "localhost.key", nil))
 }
