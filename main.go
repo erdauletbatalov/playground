@@ -1,204 +1,56 @@
-package lightdns
+package main
 
 import (
 	"fmt"
-	"net"
+	"time"
 
-	"github.com/google/gopacket"
-	"github.com/google/gopacket/layers"
+	"github.com/miekg/dns"
 )
 
-type ZoneType uint16
+func main() {
+	// Set the DNS server to use for the request
+	dnsServer := "8.8.8.8:53"
 
-const (
-	DNSForwardLookupZone ZoneType = 1
-	DNSReverseLookupZone ZoneType = 2 //Todo
-)
+	// Read the array of IP addresses
+	ips := []string{"216.58.211.3", "200.140.59.10", "188.235.48.62"}
 
-type Handler interface {
-	serveDNS(*udpConnection, *layers.DNS)
-}
+	// Create a channel to receive the DNS responses
+	responses := make(chan *dns.Msg)
 
-//DNSServer is the contains the runtime information
-type DNSServer struct {
-	port    int
-	handler Handler
-}
+	// Send a DNS PTR request for each IP address
+	for _, ip := range ips {
+		// Create a DNS PTR record with the IP address
+		question := new(dns.Msg)
+		question.SetQuestion(ip+".in-addr.arpa.", dns.TypePTR)
 
-//NewDNSServer - Creates new DNSServer
-func NewDNSServer(port int) *DNSServer {
-	handler := NewServeMux()
-	return &DNSServer{port: port, handler: handler}
-}
-
-type serveMux struct {
-	handler map[string]Handler
-}
-
-//NewServeMux - creates a servemux with handler field intialised
-func NewServeMux() *serveMux {
-	h := make(map[string]Handler)
-	return &serveMux{handler: h}
-}
-
-//handleFunc - registers a zone data with a handler for it
-func (srv *serveMux) handleFunc(pattern string, f func(*udpConnection, *layers.DNS)) {
-	srv.handler[pattern] = handlerConvert(f)
-}
-
-func (srv *serveMux) serveDNS(u *udpConnection, request *layers.DNS) {
-	var h Handler
-	if len(request.Questions) < 1 { // allow more than one question
-		return
-	}
-	if h = srv.match(string(request.Questions[0].Name), request.Questions[0].Type); h == nil {
-		//todo: log handler not found
-		fmt.Println("no handler found for ", request.Questions[0].Name)
-	} else {
-		h.serveDNS(u, request)
-	}
-}
-
-//StartToServe - creates a UDP connection and uses the connection to serve DNS
-func (dns *DNSServer) StartAndServe() {
-	addr := net.UDPAddr{
-		Port: dns.port,
-		IP:   net.ParseIP("127.0.0.1"),
-	}
-	l, _ := net.ListenUDP("udp", &addr)
-	udpConnection := &udpConnection{conn: l}
-	dns.serve(udpConnection)
-}
-
-func (dns *DNSServer) serve(u *udpConnection) {
-	for {
-		tmp := make([]byte, 1024)
-		_, addr, _ := u.conn.ReadFrom(tmp)
-		u.addr = addr
-		packet := gopacket.NewPacket(tmp, layers.LayerTypeDNS, gopacket.Default)
-		dnsPacket := packet.Layer(layers.LayerTypeDNS)
-		tcp, _ := dnsPacket.(*layers.DNS)
-		dns.handler.serveDNS(u, tcp)
-	}
-}
-
-type handlerConvert func(*udpConnection, *layers.DNS)
-
-func (f handlerConvert) serveDNS(w *udpConnection, r *layers.DNS) {
-	f(w, r)
-}
-
-type udpConnection struct {
-	conn net.PacketConn
-	addr net.Addr
-}
-
-func (udp *udpConnection) Write(b []byte) error {
-	udp.conn.WriteTo(b, udp.addr)
-	return nil
-}
-
-type customHandler func(string) (string, error)
-
-func generateHandler(records map[string]string, lookupFunc customHandler) func(w *udpConnection, r *layers.DNS) {
-	return func(w *udpConnection, r *layers.DNS) {
-		switch r.Questions[0].Type {
-		case layers.DNSTypeA:
-			handleATypeQuery(w, r, records, lookupFunc)
-		}
-	}
-}
-
-//AddZoneData - Depending on the zoneType and recordType  this function generates appropriate handler and registers in the serveMux
-func (dns *DNSServer) AddZoneData(zone string, records map[string]string, lookupFunc func(string) (string, error), lookupZone ZoneType) {
-	if lookupZone == DNSForwardLookupZone {
-		serveMuxCurrent := dns.handler.(*serveMux)
-		serveMuxCurrent.handleFunc(zone, generateHandler(records, lookupFunc))
-	}
-}
-
-func (srv *serveMux) match(q string, t layers.DNSType) Handler {
-	var handler Handler
-	b := make([]byte, len(q)) // worst case, one label of length q
-	off := 0
-	end := false
-	for {
-		l := len(q[off:])
-		for i := 0; i < l; i++ {
-			b[i] = q[off+i]
-			if b[i] >= 'A' && b[i] <= 'Z' {
-				b[i] |= 'a' - 'A'
+		// Send the DNS request in a goroutine
+		go func() {
+			c := new(dns.Client)
+			msg, _, err := c.Exchange(question, dnsServer)
+			if err != nil {
+				fmt.Printf("Error sending DNS request: %s\n", err)
+				return
 			}
-		}
-		if h, ok := srv.handler[string(b[:l])]; ok { // causes garbage, might want to change the map key
-			if uint16(t) != uint16(43) {
-				return h
-			}
-			// Continue for DS to see if we have a parent too, if so delegeate to the parent
-			handler = h
-		}
-		off, end = nextLabel(q, off)
-		if end {
-			break
-		}
+			responses <- msg
+		}()
 	}
-	// Wildcard match, if we have found nothing try the root zone as a last resort.
-	if h, ok := srv.handler["."]; ok {
-		return h
-	}
-	return handler
-}
 
-func nextLabel(s string, offset int) (i int, end bool) {
-	quote := false
-	for i = offset; i < len(s)-1; i++ {
-		switch s[i] {
-		case '\\':
-			quote = !quote
-		default:
-			quote = false
-		case '.':
-			if quote {
-				quote = !quote
-				continue
+	// Wait for all responses to arrive
+	for i := 0; i < len(ips); i++ {
+		select {
+		case msg := <-responses:
+			// Print the response from the DNS server
+			for _, rr := range msg.Answer {
+				if rr.Header().Rrtype == dns.TypePTR {
+					// This is a DNS PTR record, so print the PTR query and TTL value
+					fmt.Printf("PTR query: %s\n", rr.(*dns.PTR).Ptr)
+					fmt.Printf("TTL of DNS PTR record: %d\n", rr.Header().Ttl)
+				}
 			}
-			return i + 1, false
-		}
-	}
-	return i + 1, true
-}
 
-func handleATypeQuery(w *udpConnection, r *layers.DNS, records map[string]string, lookupFunc customHandler) {
-	replyMess := r
-	var dnsAnswer layers.DNSResourceRecord
-	dnsAnswer.Type = layers.DNSTypeA
-	var ip string
-	var err error
-	var ok bool
-	if lookupFunc == nil {
-		ip, ok = records[string(r.Questions[0].Name)]
-		if !ok {
-			//Todo: Log no data present for the IP and handle:todo
+		case <-time.After(5 * time.Second):
+			// Timeout after 5 seconds
+			fmt.Println("Timeout waiting for DNS response")
 		}
-	} else {
-		ip, err = lookupFunc(string(r.Questions[0].Name))
 	}
-	a, _, _ := net.ParseCIDR(ip + "/24")
-	dnsAnswer.Type = layers.DNSTypeA
-	dnsAnswer.IP = a
-	dnsAnswer.Name = []byte(r.Questions[0].Name)
-	dnsAnswer.Class = layers.DNSClassIN
-	replyMess.QR = true
-	replyMess.ANCount = 1
-	replyMess.OpCode = layers.DNSOpCodeNotify
-	replyMess.AA = true
-	replyMess.Answers = append(replyMess.Answers, dnsAnswer)
-	replyMess.ResponseCode = layers.DNSResponseCodeNoErr
-	buf := gopacket.NewSerializeBuffer()
-	opts := gopacket.SerializeOptions{} // See SerializeOptions for more details.
-	err = replyMess.SerializeTo(buf, opts)
-	if err != nil {
-		panic(err)
-	}
-	w.Write(buf.Bytes())
 }
