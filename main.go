@@ -1,38 +1,62 @@
 package main
 
 import (
-	"bytes"
-	"crypto/sha1"
-	"encoding/hex"
 	"fmt"
-	"io"
-	"io/ioutil"
+	"sync"
+	"time"
 )
 
 func main() {
-	payload := []byte("hello high value software engineer")
-	hashAndBroadcast(bytes.NewReader(payload))
-}
+	start := time.Now()
+	userName := fetchUser()
+	respch := make(chan any, 10)
+	wg := &sync.WaitGroup{}
 
-func hashAndBroadcast(r io.Reader) error {
-	b, err := ioutil.ReadAll(r)
-	if err != nil {
-		return err
+	wg.Add(1)
+	go func(wg *sync.WaitGroup) {
+		fetchUserLikes(userName, respch)
+		wg.Done()
+	}(wg)
+
+	wg.Add(1)
+	go func(wg *sync.WaitGroup) {
+		fetchUserMatch(userName, respch)
+		wg.Done()
+	}(wg)
+
+	wg.Wait()
+	fmt.Println("all fetching is complete")
+	close(respch)
+	fmt.Println("closed respch")
+
+	for resp := range respch {
+
+		fmt.Println("resp: ", resp)
 	}
 
-	hash := sha1.Sum(b)
-	fmt.Println(hex.EncodeToString(hash[:]))
-
-	return broadcast(r)
+	fmt.Println("took: ", time.Since(start))
 }
 
-func broadcast(r io.Reader) error {
-	b, err := ioutil.ReadAll(r)
-	if err != nil {
-		return err
-	}
+// func printResponse(respch chan any) {
+// 	for resp := range respch {
+// 		fmt.Println("resp: ", resp)
+// 	}
+// }
 
-	fmt.Println("string of the bytes: ", string(b))
+func fetchUser() string {
+	time.Sleep(time.Millisecond * 100)
 
-	return nil
+	return "BOB"
+}
+
+func fetchUserLikes(userName string, respch chan any) {
+	time.Sleep(time.Millisecond * 150)
+
+	respch <- 11
+}
+
+func fetchUserMatch(userName string, respch chan any) {
+	time.Sleep(time.Millisecond * 100)
+
+	respch <- "ANNA"
 }
