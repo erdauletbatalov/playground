@@ -3,11 +3,9 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io/fs"
 	"log"
 	"net"
 	"os"
-	"path/filepath"
 	"strings"
 )
 
@@ -19,10 +17,10 @@ func main() {
 	if len(args) > 0 {
 		socketPath = args[0]
 	}
-	handleSocket(args, socketPath)
+	handleSocket(socketPath)
 }
 
-func readSocket(conn net.Conn, size int, prompt string) (map[string]interface{}, error) {
+func readSocket(conn net.Conn, size int) (map[string]interface{}, error) {
 	response := make(map[string]interface{})
 	buf := make([]byte, size)
 	n, err := conn.Read(buf)
@@ -33,45 +31,40 @@ func readSocket(conn net.Conn, size int, prompt string) (map[string]interface{},
 	if err != nil {
 		log.Fatal(err)
 	}
-	// if _, ok := response["output"]; ok {
-	fmt.Printf("%s\n", response)
-	// }
+	for key, value := range response {
+		fmt.Printf("%s\t%s\n", key, value)
+	}
+	fmt.Println()
 	return response, nil
 }
 
-func handleSocket(args []string, socketPath string) {
-	var prompt string
-	prompt = "--> "
+func handleSocket(socketPath string) {
+	prompt := "--> "
 	fmt.Println("Connecting to", socketPath)
 
-	conn, err := net.Dial("unix", socketPath)
+	addr, err := net.ResolveUnixAddr("unixpacket", socketPath)
 	if err != nil {
-		fmt.Println("Error connecting to", socketPath)
+		log.Panicf("resolve unix addr: %v", err)
+	}
+
+	conn, err := net.DialUnix("unixpacket", nil, addr)
+	if err != nil {
+		log.Panicf("err dialing unix: %v", err)
 		conn.Close()
-		if _, err := os.Stat(socketPath); os.IsNotExist(err) {
-			return
-		}
-		sockets := findSockets(filepath.Dir(socketPath))
-		if len(sockets) > 0 {
-			fmt.Println("\nOther DPDK telemetry sockets found:")
-			// 	printSocketOptions(args, sockets)
-			// } else {
-			// 	listFp(args)
-		}
 		return
 	}
 	defer conn.Close()
-	response, err := readSocket(conn, 1024, prompt)
+	response, err := readSocket(conn, 1024)
 	if err != nil {
 		log.Fatal(err)
 	}
 	outputBufLen := int(response["max_output_len"].(float64))
 	appName := int(response["pid"].(float64))
 	if appName != 0 && prompt != "" {
-		fmt.Printf("Connected to application: \"%s\"\n", appName)
+		fmt.Printf("Connected to application: \"%d\"\n", appName)
 	}
 	conn.Write([]byte("/"))
-	response, err = readSocket(conn, outputBufLen, "")
+	response, err = readSocket(conn, outputBufLen)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -88,39 +81,17 @@ func handleSocket(args []string, socketPath string) {
 			break
 		}
 		if len(text) > 0 && text[0] == '/' {
-			if cmds[text] {
-				conn.Write([]byte(text))
-				response, err = readSocket(conn, outputBufLen, "")
-				if err != nil {
-					log.Fatal(err)
-				}
-			} else {
-				fmt.Println("Invalid command. Type /help for list of commands.")
+			// if cmds[text] {
+			conn.Write([]byte(text))
+			_, err = readSocket(conn, outputBufLen)
+			if err != nil {
+				log.Fatal(err)
 			}
+			// } else {
+			// 	fmt.Println("Invalid command. Type /help for list of commands.")
+			// }
 		}
 	}
-}
-
-func findSockets(path string) []string {
-	var sockets []string
-	files, _ := os.ReadDir(path)
-	for _, file := range files {
-		fmt.Println(path + file.Name())
-		if !IsSocket(path + file.Name()) {
-			continue
-		}
-		sockets = append(sockets, fmt.Sprintf("%s/%s", path, file.Name()))
-	}
-	return sockets
-}
-
-// Check if a file is a socket.
-func IsSocket(path string) bool {
-	fileInfo, err := os.Stat(path)
-	if err != nil {
-		log.Fatal("ERROR - ", err)
-	}
-	return fileInfo.Mode().Type() == fs.ModeSocket
 }
 
 type initialMessage struct {
