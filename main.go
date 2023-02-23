@@ -28,7 +28,7 @@ func main() {
 		log.Panicf("err reading the initial message from the socket: %v", err)
 	}
 
-	if err := json.Unmarshal(buf, &msg); err != nil {
+	if err := json.Unmarshal(buf[:n], &msg); err != nil {
 		log.Panicf("unmarshal error: %v", err)
 	}
 	if msg.MaxOutputLen <= 0 {
