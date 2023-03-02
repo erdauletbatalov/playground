@@ -6,6 +6,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"reflect"
 	"strings"
 )
 
@@ -32,7 +33,14 @@ func readSocket(conn net.Conn, size int) (map[string]interface{}, error) {
 		log.Fatal(err)
 	}
 	for key, value := range response {
-		fmt.Printf("%s\t%s\n", key, value)
+		v := reflect.TypeOf(value)
+		fmt.Println(key, v.String())
+		// v := fmt.Sprint(floatStr)
+		// arr := strings.Split(v, " ")
+		// fmt.Printf("%s\n", key)
+		// for _, v := range arr {
+		// 	fmt.Printf("%s\t", v)
+		// }
 	}
 	fmt.Println()
 	return response, nil
