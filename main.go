@@ -1,109 +1,62 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
-	"log"
-	"net"
 	"os"
-	"reflect"
 	"strings"
+	"time"
 )
 
-var cmds map[string]bool
-
 func main() {
-	args := os.Args[1:]
-	socketPath := "/var/run/dpdk/yerdaulet/dpdk_telemetry.v2"
-	if len(args) > 0 {
-		socketPath = args[0]
-	}
-	handleSocket(socketPath)
-}
 
-func readSocket(conn net.Conn, size int) (map[string]interface{}, error) {
-	response := make(map[string]interface{})
-	buf := make([]byte, size)
-	n, err := conn.Read(buf)
-	if err != nil {
-		log.Fatal(err)
-	}
-	err = json.Unmarshal(buf[:n], &response)
-	if err != nil {
-		log.Fatal(err)
-	}
-	for key, value := range response {
-		v := reflect.TypeOf(value)
-		fmt.Println(key, v.String())
-		// v := fmt.Sprint(floatStr)
-		// arr := strings.Split(v, " ")
-		// fmt.Printf("%s\n", key)
-		// for _, v := range arr {
-		// 	fmt.Printf("%s\t", v)
-		// }
-	}
-	fmt.Println()
-	return response, nil
-}
-
-func handleSocket(socketPath string) {
-	prompt := "--> "
-	fmt.Println("Connecting to", socketPath)
-
-	addr, err := net.ResolveUnixAddr("unixpacket", socketPath)
-	if err != nil {
-		log.Panicf("resolve unix addr: %v", err)
-	}
-
-	conn, err := net.DialUnix("unixpacket", nil, addr)
-	if err != nil {
-		log.Panicf("err dialing unix: %v", err)
-		conn.Close()
-		return
-	}
-	defer conn.Close()
-	response, err := readSocket(conn, 1024)
-	if err != nil {
-		log.Fatal(err)
-	}
-	outputBufLen := int(response["max_output_len"].(float64))
-	appName := int(response["pid"].(float64))
-	if appName != 0 && prompt != "" {
-		fmt.Printf("Connected to application: \"%d\"\n", appName)
-	}
-	conn.Write([]byte("/"))
-	response, err = readSocket(conn, outputBufLen)
-	if err != nil {
-		log.Fatal(err)
-	}
-	cmds = make(map[string]bool)
-	for _, cmd := range response["/"].([]interface{}) {
-		cmds[cmd.(string)] = true
-	}
-	for {
-		var text string
-		fmt.Print(prompt)
-		fmt.Scanln(&text)
-		text = strings.TrimSpace(text)
-		if text == "quit" {
+	start := time.Now()
+	var temp string
+	for i, val := range os.Args[1:] {
+		if i == len(os.Args[1:])-1 {
+			temp += val
 			break
 		}
-		if len(text) > 0 && text[0] == '/' {
-			// if cmds[text] {
-			conn.Write([]byte(text))
-			_, err = readSocket(conn, outputBufLen)
-			if err != nil {
-				log.Fatal(err)
-			}
-			// } else {
-			// 	fmt.Println("Invalid command. Type /help for list of commands.")
-			// }
-		}
+		temp += val + " "
 	}
+
+	fmt.Printf("%.10fs elapsed, arguments: %v \n", time.Since(start).Seconds(), temp)
+
+	start = time.Now()
+	result := strings.Join(os.Args[1:], " ")
+
+	fmt.Printf("%.10fs elapsed, arguments: %v \n", time.Since(start).Seconds(), result)
+
 }
 
-type initialMessage struct {
-	Version      string `json:"version,omitempty"`
-	PID          int    `json:"pid,omitempty"`
-	MaxOutputLen int    `json:"max_output_len,omit"`
-}
+// Results:
+
+// erdauletbatalov@DESKTOP-45RK1O4:~/edu/playground$ go run main.go hello pidor idi nahui  ldfslkd lfjs ldf sldfj
+// 0.0000080000s elapsed, arguments: hello pidor idi nahui ldfslkd lfjs ldf sldfj
+// 0.0000008000s elapsed, arguments: hello pidor idi nahui ldfslkd lfjs ldf sldfj
+// erdauletbatalov@DESKTOP-45RK1O4:~/edu/playground$ go run main.go hello pidor idi nahui  ldfslkd lfjs ldf sldfj
+// 0.0000078000s elapsed, arguments: hello pidor idi nahui ldfslkd lfjs ldf sldfj
+// 0.0000008000s elapsed, arguments: hello pidor idi nahui ldfslkd lfjs ldf sldfj
+// erdauletbatalov@DESKTOP-45RK1O4:~/edu/playground$ go run main.go hello pidor idi nahui  ldfslkd lfjs ldf sldfj
+// 0.0000091000s elapsed, arguments: hello pidor idi nahui ldfslkd lfjs ldf sldfj
+// 0.0000007000s elapsed, arguments: hello pidor idi nahui ldfslkd lfjs ldf sldfj
+// erdauletbatalov@DESKTOP-45RK1O4:~/edu/playground$ go run main.go hello pidor idi nahui  ldfslkd lfjs ldf sldfj
+// 0.0000081000s elapsed, arguments: hello pidor idi nahui ldfslkd lfjs ldf sldfj
+// 0.0000008000s elapsed, arguments: hello pidor idi nahui ldfslkd lfjs ldf sldfj
+// erdauletbatalov@DESKTOP-45RK1O4:~/edu/playground$ go run main.go hello pidor idi nahui  ldfslkd lfjs ldf sldfj
+// 0.0000014000s elapsed, arguments: hello pidor idi nahui ldfslkd lfjs ldf sldfj
+// 0.0000007000s elapsed, arguments: hello pidor idi nahui ldfslkd lfjs ldf sldfj
+// erdauletbatalov@DESKTOP-45RK1O4:~/edu/playground$ go run main.go hello pidor idi nahui  ldfslkd lfjs ldf sldfj
+// 0.0000040000s elapsed, arguments: hello pidor idi nahui ldfslkd lfjs ldf sldfj
+// 0.0000008000s elapsed, arguments: hello pidor idi nahui ldfslkd lfjs ldf sldfj
+// erdauletbatalov@DESKTOP-45RK1O4:~/edu/playground$ go run main.go hello pidor idi nahui  ldfslkd lfjs ldf sldfj
+// 0.0000013000s elapsed, arguments: hello pidor idi nahui ldfslkd lfjs ldf sldfj
+// 0.0000011000s elapsed, arguments: hello pidor idi nahui ldfslkd lfjs ldf sldfj
+// erdauletbatalov@DESKTOP-45RK1O4:~/edu/playground$ go run main.go hello pidor idi nahui  ldfslkd lfjs ldf sldfj
+// 0.0000013000s elapsed, arguments: hello pidor idi nahui ldfslkd lfjs ldf sldfj
+// 0.0000008000s elapsed, arguments: hello pidor idi nahui ldfslkd lfjs ldf sldfj
+// erdauletbatalov@DESKTOP-45RK1O4:~/edu/playground$ go run main.go hello pidor idi nahui  ldfslkd lfjs ldf sldfj
+// 0.0000014000s elapsed, arguments: hello pidor idi nahui ldfslkd lfjs ldf sldfj
+// 0.0000008000s elapsed, arguments: hello pidor idi nahui ldfslkd lfjs ldf sldfj
+// erdauletbatalov@DESKTOP-45RK1O4:~/edu/playground$ go run main.go hello pidor idi nahui  ldfslkd lfjs ldf sldfj
+// 0.0000013000s elapsed, arguments: hello pidor idi nahui ldfslkd lfjs ldf sldfj
+// 0.0000009000s elapsed, arguments: hello pidor idi nahui ldfslkd lfjs ldf sldfj
