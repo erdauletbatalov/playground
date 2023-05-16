@@ -1,25 +1,11 @@
 package main
 
 import (
-	"fmt"
-	"net/http"
 	"playground/metrics"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 )
-
-var pingCounter = prometheus.NewCounter(
-	prometheus.CounterOpts{
-		Name: "ping_request_count",
-		Help: "No of request handled by Ping handler",
-	},
-)
-
-func ping(w http.ResponseWriter, req *http.Request) {
-	pingCounter.Inc()
-	fmt.Fprintf(w, "pong")
-}
 
 var (
 	ethdevXstatsLabels     = []string{"port_id", "port_name", "prefix", "xstat_name"}
