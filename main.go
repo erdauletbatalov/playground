@@ -1,64 +1,49 @@
 package main
 
-import (
-	"fmt"
-)
+import "fmt"
 
 func main() {
-	fmt.Println(gcdOfStrings("LEETLEETLEET", "LEET"))
-	fmt.Println(gcdOfStrings("LLLLLLLLLLL", "LLLL"))
-	fmt.Println(gcdOfStrings("ABABAB", "ABAB"))
+	fmt.Println(canPlaceFlowers([]int{0}, 2))
 }
 
-func gcdOfStrings(str1 string, str2 string) string {
-	var x []rune
-	var long, short string
-	if str1 > str2 {
-		long = str1
-		short = str2
-	} else {
-		long = str2
-		short = str1
-	}
-	xMaxLen := findGcd(len(short), len(long))
-
-	for i, val := range short {
-		if val != rune(long[i]) {
-			return ""
-		}
-	}
-
-	for i, val := range short {
-		if i >= xMaxLen {
-			if val == rune(short[i-xMaxLen]) {
-				continue
+func canPlaceFlowers(flowerbed []int, n int) bool {
+	for i := range flowerbed {
+		if canPlaceFlower(flowerbed, i) {
+			n--
+			if n == 0 {
+				return true
 			}
 		}
-
-		if val == rune(long[i]) {
-			x = append(x, val)
-		}
 	}
-	if len(x) == 0 {
-		return ""
-	}
-	if len(long)%len(x) != 0 {
-		return ""
-	}
-	for i := len(short); i < len(long); i++ {
-		if long[i] != long[i-len(short)] {
-			return ""
-		}
-	}
-
-	return string(x)
+	return false
 }
 
-func findGcd(a, b int) int {
-	for b != 0 {
-		remainder := a % b
-		a = b
-		b = remainder
+func canPlaceFlower(flowerbed []int, index int) bool {
+	if len(flowerbed) == 1 {
+		if flowerbed[index] == 0 {
+			return true
+		} else {
+			return false
+		}
 	}
-	return a
+	switch index {
+	case 0:
+		if flowerbed[index] == 0 && flowerbed[index+1] == 0 {
+			return true
+		} else {
+			return false
+		}
+	case len(flowerbed) - 1:
+		if flowerbed[index] == 0 && flowerbed[index-1] == 0 {
+			return true
+		} else {
+			return false
+		}
+	default:
+		if flowerbed[index] == 0 && flowerbed[index-1] == 0 && flowerbed[index+1] == 0 {
+			return true
+		} else {
+			return false
+		}
+	}
 }
