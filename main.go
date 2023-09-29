@@ -18,49 +18,43 @@
 
 package main
 
-import "fmt"
-
-// initialize map
-var vowelsMap = map[rune]bool{
-	'a': true, 'e': true, 'i': true, 'o': true, 'u': true,
-	'A': true, 'E': true, 'I': true, 'O': true, 'U': true,
-}
+import (
+	"fmt"
+)
 
 func main() {
 	// input string from user stdin
-	var input string
-	fmt.Scan(&input)
-
-	fmt.Println(reverseVowels(input))
+	input := "the sky is blue"
+	fmt.Println(reverseWords(input))
 }
 
-func reverseVowels(s string) string {
-	var result []rune
-	r := findVowels(s)
-	for i := range s {
-		if isVowel(rune(s[i])) {
-			result = append(result, rune(r[len(r)-1]))
-			r = r[:len(r)-1]
+func reverseWords(s string) string {
+	var result string
+	var words []string
+	for i := 0; i < len(s); {
+		if s[i] != 32 {
+			words = append(words, returnWord(s[i:]))
+			i = i + len(words[len(words)-1])
 			continue
 		}
-		result = append(result, rune(s[i]))
+		i++
 	}
-	return string(result)
-}
-
-func findVowels(s string) []rune {
-	vowels := make([]rune, 0)
-	for i := range s {
-		if isVowel(rune(s[i])) {
-			vowels = append(vowels, rune(s[i]))
+	for i := len(words) - 1; i >= 0; i-- {
+		if i != 0 {
+			result += words[i] + " "
+			continue
 		}
+		result += words[i]
 	}
-	return vowels
+	return result
 }
 
-func isVowel(r rune) bool {
-	if _, ok := vowelsMap[r]; ok {
-		return true
+func returnWord(s string) string {
+	for i := range s {
+		if s[i] != 32 {
+			continue
+		}
+		return s[:i]
 	}
-	return false
+	return s
 }
