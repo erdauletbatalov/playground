@@ -24,37 +24,42 @@ import (
 
 func main() {
 	// input string from user stdin
-	input := "the sky is blue"
-	fmt.Println(reverseWords(input))
+	input := []int{0, 1, 2}
+	fmt.Println(productExceptSelf(input))
 }
 
-func reverseWords(s string) string {
-	var result string
-	var words []string
-	for i := 0; i < len(s); {
-		if s[i] != 32 {
-			words = append(words, returnWord(s[i:]))
-			i = i + len(words[len(words)-1])
-			continue
+func productExceptSelf(nums []int) []int {
+
+	var result = make([]int, 0, len(nums))
+	countOfZero := 0
+	for i := range nums {
+		result = append(result, 0)
+		if nums[i] == 0 {
+			countOfZero++
 		}
-		i++
 	}
-	for i := len(words) - 1; i >= 0; i-- {
-		if i != 0 {
-			result += words[i] + " "
-			continue
+	if countOfZero >= 2 {
+		return result
+	}
+	product := 1
+	for i := range result {
+		if nums[i] != 0 {
+			product *= nums[i]
 		}
-		result += words[i]
+	}
+	if countOfZero == 1 {
+		for i := range nums {
+			if nums[i] == 0 {
+				result[i] = product
+				continue
+			}
+			result[i] = 0
+		}
+		return result
+	}
+
+	for i := range nums {
+		result[i] = product / nums[i]
 	}
 	return result
-}
-
-func returnWord(s string) string {
-	for i := range s {
-		if s[i] != 32 {
-			continue
-		}
-		return s[:i]
-	}
-	return s
 }
