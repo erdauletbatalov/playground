@@ -35,42 +35,67 @@ import (
 
 func main() {
 	// input string from user stdin
-	input := []int{1, 2, 3, 4, 5}
-	fmt.Println(increasingTriplet(input))
+	input := []byte{'a', 'a', 'b', 'b', 'c', 'c', 'c'}
+	fmt.Println((compress(input)))
 }
 
-func increasingTriplet(nums []int) bool {
-	if len(nums) < 3 {
-		return false
-	}
-	difNums := make(map[int]bool)
-
-	for _, val := range nums {
-		if _, ok := difNums[val]; !ok {
-			difNums[val] = true
+func compress(chars []byte) int {
+	var result []byte
+	var charToCompress byte
+	var count int = 1
+	for i := range chars {
+		if len(chars) == 1 {
+			result = append(result, chars[i])
+			break
 		}
-	}
-	if len(difNums) < 3 {
-		return false
-	}
-	for i := range nums {
-		if i+1 >= len(nums) {
+		if i == 0 {
+			charToCompress = chars[i]
 			continue
 		}
-		for j := i + 1; j < len(nums); j++ {
-			if j+1 >= len(nums) {
-				continue
-			}
-			if nums[j] > nums[i] {
-				for k := j + 1; k < len(nums); k++ {
-					if nums[k] > nums[j] {
-						return true
-					}
+		if charToCompress == chars[i] {
+			count++
+			if i == len(chars)-1 {
+				if count == 1 {
+					result = append(result, charToCompress)
+				} else {
+					result = append(result, charToCompress)
+					result = append(result, intToBytes(count)...)
 				}
+				break
 			}
-
+			continue
 		}
 
+		if i == len(chars)-1 {
+			if count == 1 {
+				result = append(result, charToCompress)
+			} else {
+				result = append(result, charToCompress)
+				result = append(result, intToBytes(count)...)
+			}
+			charToCompress = chars[i]
+			count = 1
+		}
+		if count == 1 {
+			result = append(result, charToCompress)
+		} else {
+			result = append(result, charToCompress)
+			result = append(result, intToBytes(count)...)
+		}
+		charToCompress = chars[i]
+		count = 1
 	}
-	return false
+	copy(chars, result)
+	fmt.Println(string(chars))
+	return len(result)
+}
+
+func intToBytes(n int) []byte {
+	result := []byte{}
+	for n != 0 {
+		i := n % 10
+		result = append([]byte{byte(i) + '0'}, result...)
+		n = n / 10
+	}
+	return result
 }
