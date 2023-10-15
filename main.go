@@ -3,26 +3,23 @@ package main
 import "fmt"
 
 func main() {
-	moveZeroes([]int{0, 1, 0, 3, 12})
-	moveZeroes([]int{0, 0, 0, 1})
-	moveZeroes([]int{4, 2, 4, 0, 0, 3, 0, 5, 1, 0})
+	fmt.Println(isSubsequence("abc", "ahbgdc"))
+	fmt.Println(isSubsequence("axc", "ahbgdc"))
 }
 
-func moveZeroes(nums []int) {
-	zeroCount := 0
-	for i := 0; i < len(nums); i++ {
-		if nums[i] == 0 {
-			for j := i + 1; j < len(nums); j++ {
-				if nums[j-1] == 0 {
-					zeroCount++
-				}
-				if nums[j] != 0 {
-					nums[j-zeroCount], nums[j] = nums[j], nums[j-zeroCount]
-					zeroCount--
-				}
+func isSubsequence(s string, t string) bool {
+	subs := 0
+	for i := 0; i < len(s); i++ {
+		for j := 0; j < len(t); j++ {
+			if s[i] == t[j] && j+1 < len(t) {
+				subs++
+				t = t[j+1:]
+				break
+			} else if s[i] == t[j] {
+				subs++
+				return subs == len(s)
 			}
-			break
 		}
 	}
-	fmt.Println(nums)
+	return subs == len(s)
 }
