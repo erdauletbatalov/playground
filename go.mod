@@ -1,3 +1,3 @@
-module playground
+module github.com/erdauletbatalov/playground
 
-go 1.18
+go 1.21.3
