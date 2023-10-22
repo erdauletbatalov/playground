@@ -3,27 +3,41 @@ package main
 import "fmt"
 
 func main() {
-	fmt.Println(findMaxAverage([]int{1, 12, -5, -6, 50, 3}, 4))
+	fmt.Println(maxVowels("hellooo", 4))
 }
 
-func findMaxAverage(nums []int, k int) float64 {
-	var max float64
-	var segment float64
-	if len(nums) < k {
+func maxVowels(s string, k int) int {
+	curr := 0
+	vowels := "aeiou"
+	var max int
+	if len(s) < k {
 		return 0
 	}
 	for i := 0; i < k; i++ {
-		segment += float64(nums[i])
+		if contains(vowels, s[i]) {
+			max++
+		}
+		curr = max
 	}
-	max = segment
-	if len(nums) == k {
-		return segment / float64(k)
-	}
-	for i := 1; i < len(nums)-k+1; i++ {
-		segment = segment - float64(nums[i-1]) + float64(nums[i+k-1])
-		if max < segment {
-			max = segment
+	for i := 1; i < len(s)-k+1; i++ {
+		if contains(vowels, s[i-1]) {
+			curr--
+		}
+		if contains(vowels, s[i+k-1]) {
+			curr++
+		}
+		if curr > max {
+			max = curr
 		}
 	}
-	return max / float64(k)
+	return max
+}
+
+func contains(str string, ch byte) bool {
+	for i := range str {
+		if ch == str[i] {
+			return true
+		}
+	}
+	return false
 }
