@@ -3,26 +3,27 @@ package main
 import "fmt"
 
 func main() {
-	fmt.Println(maxOperations([]int{2, 5, 4, 4, 1, 3, 4, 4, 1, 4, 4, 1, 2, 1, 2, 2, 3, 2, 4, 2}, 3))
+	fmt.Println(findMaxAverage([]int{1, 12, -5, -6, 50, 3}, 4))
 }
 
-func maxOperations(nums []int, k int) int {
-	var result int
-	var m = make(map[int]int)
-	for i := range nums {
-		if nums[i] >= k {
-			continue
-		}
-		if output, ok := m[nums[i]]; ok {
-			result++
-			if output > 1 {
-				m[nums[i]]--
-			} else {
-				delete(m, nums[i])
-			}
-			continue
-		}
-		m[k-nums[i]]++
+func findMaxAverage(nums []int, k int) float64 {
+	var max float64
+	var segment float64
+	if len(nums) < k {
+		return 0
 	}
-	return result
+	for i := 0; i < k; i++ {
+		segment += float64(nums[i])
+	}
+	max = segment
+	if len(nums) == k {
+		return segment / float64(k)
+	}
+	for i := 1; i < len(nums)-k+1; i++ {
+		segment = segment - float64(nums[i-1]) + float64(nums[i+k-1])
+		if max < segment {
+			max = segment
+		}
+	}
+	return max / float64(k)
 }
