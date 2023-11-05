@@ -5,46 +5,26 @@ import (
 )
 
 func main() {
-	fmt.Println(longestSubarray([]int{1, 1, 1}))
+	fmt.Println(largestAltitude([]int{-5, 1, 5, 0, -7}))
 }
 
-func longestSubarray(nums []int) int {
-	var prev, zeros, ones, max, curr int
-
-	for i := range nums {
-		if nums[i] == 1 {
-			ones++
-		} else {
-			zeros++
+func largestAltitude(gain []int) int {
+	var altitude []int
+	for i := 0; i < len(gain)+1; i++ {
+		if i == 0 {
+			altitude = append(altitude, 0)
+			continue
 		}
+		altitude = append(altitude, altitude[i-1]+gain[i-1])
 	}
-	if ones == len(nums) {
-		return len(nums) - 1
-	}
-	if zeros == len(nums) {
-		return 0
-	}
+	return max(altitude)
+}
 
-	for i := 0; i < len(nums); i++ {
-		if nums[i] == 1 {
-			curr++
-		} else if nums[i] == 0 && i != 0 && i != len(nums)-1 {
-			if nums[i+1] == 0 {
-				prev = 0
-				if max < prev+curr {
-					max = prev + curr
-				}
-				curr = 0
-			} else {
-				if max < prev+curr {
-					max = prev + curr
-				}
-				prev = curr
-				curr = 0
-			}
-		}
-		if max < prev+curr {
-			max = prev + curr
+func max(arr []int) int {
+	var max int
+	for i := range arr {
+		if arr[i] > max {
+			max = arr[i]
 		}
 	}
 	return max
