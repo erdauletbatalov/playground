@@ -1,67 +1,50 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+)
 
 func main() {
-	fmt.Println(longestOnes([]int{1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0}, 2))
+	fmt.Println(longestSubarray([]int{1, 1, 1}))
 }
 
-func longestOnes(nums []int, k int) int {
-	var res, max int
-	var tempArr []int
-
-	var nulls int
+func longestSubarray(nums []int) int {
+	var prev, zeros, ones, max, curr int
 
 	for i := range nums {
 		if nums[i] == 1 {
-			res++
+			ones++
 		} else {
-			nulls++
-		}
-		if nums[i] != 1 || i == len(nums)-1 {
-			if max < res {
-				max = res
-			}
-			res = 0
+			zeros++
 		}
 	}
-	if k == 0 {
-		return max
+	if ones == len(nums) {
+		return len(nums) - 1
 	}
-	if nulls < k {
-		return len(nums)
+	if zeros == len(nums) {
+		return 0
 	}
-	res = 0
-	max = 0
 
 	for i := 0; i < len(nums); i++ {
-		if nums[i] == 0 {
-			k--
-			nums[i] = 1
-			tempArr = append(tempArr, i)
-			if k == 0 {
-				for j := tempArr[0]; j >= 0; j-- {
-					if nums[j] == 0 {
-						break
-					}
-					res++
+		if nums[i] == 1 {
+			curr++
+		} else if nums[i] == 0 && i != 0 && i != len(nums)-1 {
+			if nums[i+1] == 0 {
+				prev = 0
+				if max < prev+curr {
+					max = prev + curr
 				}
-				for j := tempArr[0]; j < len(nums); j++ {
-					if nums[j] == 0 {
-						break
-					}
-					res++
+				curr = 0
+			} else {
+				if max < prev+curr {
+					max = prev + curr
 				}
-				res = res - 1
-				if max < res {
-					max = res
-				}
-				res = 0
-				nums[tempArr[0]] = 0
-				tempArr = tempArr[1:]
-				k++
-
+				prev = curr
+				curr = 0
 			}
+		}
+		if max < prev+curr {
+			max = prev + curr
 		}
 	}
 	return max
