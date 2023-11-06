@@ -5,27 +5,27 @@ import (
 )
 
 func main() {
-	fmt.Println(largestAltitude([]int{-5, 1, 5, 0, -7}))
+	fmt.Println(pivotIndex([]int{1, 7, 3, 6, 5, 6}))
 }
-
-func largestAltitude(gain []int) int {
-	var altitude []int
-	for i := 0; i < len(gain)+1; i++ {
+func pivotIndex(nums []int) int {
+	var sum, left, right int
+	for _, v := range nums {
+		sum += v
+	}
+	for i := 0; i < len(nums); i++ {
 		if i == 0 {
-			altitude = append(altitude, 0)
-			continue
+			left = 0
+			right = sum - nums[i]
+		} else if i == len(nums)-1 {
+			left = sum - nums[i]
+			right = 0
+		} else {
+			left = left + nums[i-1]
+			right = right - nums[i]
 		}
-		altitude = append(altitude, altitude[i-1]+gain[i-1])
-	}
-	return max(altitude)
-}
-
-func max(arr []int) int {
-	var max int
-	for i := range arr {
-		if arr[i] > max {
-			max = arr[i]
+		if left == right {
+			return i
 		}
 	}
-	return max
+	return -1
 }
