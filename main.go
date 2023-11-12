@@ -49,6 +49,7 @@ func closeStrings(word1 string, word2 string) bool {
 			continue
 		}
 		return false
+
 	}
 	return true
 }
