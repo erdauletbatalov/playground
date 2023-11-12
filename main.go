@@ -1,52 +1,45 @@
 package main
 
-import (
-	"fmt"
-	"runtime"
-	"sync"
-	"time"
-)
+import "fmt"
 
 func main() {
-	runtime.GOMAXPROCS(4)
-	type value struct {
-		sync.Mutex
-		id     string
-		locked bool
-	}
+	fmt.Println(findDifference([]int{1, 2, 3}, []int{2, 2}))
+}
 
-	lock := func(v *value) {
-		v.Lock()
-		v.locked = true
+func findDifference(nums1 []int, nums2 []int) [][]int {
+	var hashMap map[int]int
+	hashMap = make(map[int]int)
+	firstMap := make(map[int]bool)
+	secondMap := make(map[int]bool)
+	var result = [][]int{[]int{}, []int{}}
+
+	for _, val := range nums1 {
+		hashMap[val] = -1
 	}
-	unlock := func(v *value) {
-		v.Unlock()
-		v.locked = false
+	for _, val := range nums2 {
+		if res, ok := hashMap[val]; !ok {
+			hashMap[val] = 1
+			continue
+		} else if ok && res != 1 {
+			hashMap[val] = 0
+		}
 	}
-	move := func(wg *sync.WaitGroup, id string, v1, v2 *value) {
-		defer wg.Done()
-		for i := 0; ; i++ {
-			if i >= 3 {
-				fmt.Println("canceling goroutine...")
-				return
+	for _, val := range nums1 {
+		if res := hashMap[val]; res == -1 {
+			if _, ok := firstMap[val]; !ok {
+				firstMap[val] = true
+				result[0] = append(result[0], val)
 			}
 
-			fmt.Printf("%v: Goroutine is locking\n", v1.id)
-			lock(v1) // <1>
-
-			time.Sleep(2 * time.Second)
-
-			if v2.locked { // <2>
-				fmt.Printf("%v: Goroutine is , blocked by %v\n", v1.id, v2.id)
-				unlock(v1) // <3>
-				continue
+		}
+	}
+	for _, val := range nums2 {
+		if res := hashMap[val]; res == 1 {
+			if _, ok := secondMap[val]; !ok {
+				secondMap[val] = true
+				result[1] = append(result[1], val)
 			}
 		}
 	}
-	a, b, c := value{id: "Process1"}, value{id: "Process2"}, value{id: "Process3"}
-	var wg sync.WaitGroup
-	wg.Add(2)
-	go move(&wg, "first", &a, &b)
-	go move(&wg, "second", &b, &c)
-	wg.Wait()
+	return result
 }
