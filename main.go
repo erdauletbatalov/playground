@@ -3,23 +3,53 @@ package main
 import "fmt"
 
 func main() {
-	fmt.Println(uniqueOccurrences([]int{1, 2, 2, 1, 1, 3, 3}))
+	fmt.Println(closeStrings("cabbba", "abbccc"))
 }
 
-func uniqueOccurrences(arr []int) bool {
-	firstMap := make(map[int]int)
-	secondMap := make(map[int]int)
+func closeStrings(word1 string, word2 string) bool {
+	firstMap := make(map[rune]int)
+	var firstSum int
+	secondMap := make(map[rune]int)
+	var secondSum int
+	thirdMap := make(map[int]int)
+	forthMap := make(map[int]int)
 
-	for _, val := range arr {
+	for _, val := range word1 {
 		firstMap[val]++
 	}
-	for _, val := range firstMap {
+	for _, val := range word2 {
 		secondMap[val]++
 	}
-	for _, val := range secondMap {
-		if val != 1 {
+	for key, val := range firstMap {
+		if _, ok := secondMap[key]; !ok {
 			return false
 		}
+		firstSum += val
+	}
+	for key, val := range secondMap {
+		if _, ok := firstMap[key]; !ok {
+			return false
+		}
+		secondSum += val
+	}
+	if firstSum != secondSum {
+		return false
+	}
+	for _, val := range firstMap {
+		thirdMap[val]++
+	}
+	for _, val := range secondMap {
+		forthMap[val]++
+	}
+	if len(firstMap) != len(secondMap) {
+		return false
+	}
+	for thirdKey, thirdVal := range thirdMap {
+		if forthVal, ok := forthMap[thirdKey]; ok && thirdVal == forthVal {
+			continue
+		}
+		return false
+
 	}
 	return true
 }
