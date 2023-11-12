@@ -1,15 +1,25 @@
 package main
 
-import (
-	"fmt"
-	"log"
-	"net/http"
-)
+import "fmt"
 
 func main() {
-	http.HandleFunc("/", func(res http.ResponseWriter, req *http.Request) {
-		fmt.Fprint(res, "hello world!")
-	})
+	fmt.Println(uniqueOccurrences([]int{1, 2, 2, 1, 1, 3, 3}))
+}
 
-	log.Fatal(http.ListenAndServeTLS(":9000", "localhost.crt", "localhost.key", nil))
+func uniqueOccurrences(arr []int) bool {
+	firstMap := make(map[int]int)
+	secondMap := make(map[int]int)
+
+	for _, val := range arr {
+		firstMap[val]++
+	}
+	for _, val := range firstMap {
+		secondMap[val]++
+	}
+	for _, val := range secondMap {
+		if val != 1 {
+			return false
+		}
+	}
+	return true
 }
