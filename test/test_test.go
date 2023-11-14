@@ -105,12 +105,14 @@ func BenchmarkSetDelete(b *testing.B) {
 	for i := 0; i < 1024; i++ {
 		testSet = append(testSet, strconv.Itoa(i))
 	}
+	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		b.StopTimer()
 		set := Set{set: make(map[interface{}]struct{})}
 		for _, elem := range testSet {
 			set.Add(elem)
 		}
+		b.StartTimer()
 		for _, elem := range testSet {
 			set.Delete(elem)
 		}
