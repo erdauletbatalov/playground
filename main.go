@@ -1,55 +1,45 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"strconv"
+)
 
 func main() {
-	fmt.Println(closeStrings("cabbba", "abbccc"))
+	fmt.Println(equalPairs([][]int{{1, 1, 1}, {1, 1, 1}, {1, 1, 1}}))
 }
 
-func closeStrings(word1 string, word2 string) bool {
-	firstMap := make(map[rune]int)
-	var firstSum int
-	secondMap := make(map[rune]int)
-	var secondSum int
-	thirdMap := make(map[int]int)
-	forthMap := make(map[int]int)
+func equalPairs(grid [][]int) int {
+	rowMap := make(map[string]int)
+	columnMap := make(map[string]int)
+	var result int
+	var row string
+	var column = make([]string, len(grid[0]))
+	for i := range grid {
+		for j := range grid[i] {
 
-	for _, val := range word1 {
-		firstMap[val]++
-	}
-	for _, val := range word2 {
-		secondMap[val]++
-	}
-	for key, val := range firstMap {
-		if _, ok := secondMap[key]; !ok {
-			return false
-		}
-		firstSum += val
-	}
-	for key, val := range secondMap {
-		if _, ok := firstMap[key]; !ok {
-			return false
-		}
-		secondSum += val
-	}
-	if firstSum != secondSum {
-		return false
-	}
-	for _, val := range firstMap {
-		thirdMap[val]++
-	}
-	for _, val := range secondMap {
-		forthMap[val]++
-	}
-	if len(firstMap) != len(secondMap) {
-		return false
-	}
-	for thirdKey, thirdVal := range thirdMap {
-		if forthVal, ok := forthMap[thirdKey]; ok && thirdVal == forthVal {
-			continue
-		}
-		return false
+			if i == len(grid)-1 {
+				column[j] += strconv.Itoa(grid[i][j])
+			} else {
+				column[j] += strconv.Itoa(grid[i][j]) + "-"
+			}
 
+			if j == len(grid[i])-1 {
+				row += strconv.Itoa(grid[i][j])
+			} else {
+				row += strconv.Itoa(grid[i][j]) + "-"
+			}
+		}
+		rowMap[row]++
+		row = ""
 	}
-	return true
+	for i := range column {
+		columnMap[column[i]]++
+	}
+	for key, row := range rowMap {
+		if col, ok := columnMap[key]; ok {
+			result += row * col
+		}
+	}
+	return result
 }
