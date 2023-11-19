@@ -1,55 +1,49 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+)
 
 func main() {
-	fmt.Println(closeStrings("cabbba", "abbccc"))
+	fmt.Println(asteroidCollision([]int{1, 1, -1, -2}))
 }
 
-func closeStrings(word1 string, word2 string) bool {
-	firstMap := make(map[rune]int)
-	var firstSum int
-	secondMap := make(map[rune]int)
-	var secondSum int
-	thirdMap := make(map[int]int)
-	forthMap := make(map[int]int)
-
-	for _, val := range word1 {
-		firstMap[val]++
-	}
-	for _, val := range word2 {
-		secondMap[val]++
-	}
-	for key, val := range firstMap {
-		if _, ok := secondMap[key]; !ok {
-			return false
-		}
-		firstSum += val
-	}
-	for key, val := range secondMap {
-		if _, ok := firstMap[key]; !ok {
-			return false
-		}
-		secondSum += val
-	}
-	if firstSum != secondSum {
-		return false
-	}
-	for _, val := range firstMap {
-		thirdMap[val]++
-	}
-	for _, val := range secondMap {
-		forthMap[val]++
-	}
-	if len(firstMap) != len(secondMap) {
-		return false
-	}
-	for thirdKey, thirdVal := range thirdMap {
-		if forthVal, ok := forthMap[thirdKey]; ok && thirdVal == forthVal {
+func asteroidCollision(asteroids []int) []int {
+	for i := 0; i < len(asteroids); {
+		if i == 0 {
+			i++
 			continue
 		}
-		return false
-
+		var destroyed int
+		if asteroids = destroyRecursively(asteroids, i-1, i, &destroyed); destroyed > 0 {
+			i -= destroyed
+		} else {
+			i++
+		}
 	}
-	return true
+	return asteroids
+}
+
+func destroyRecursively(result []int, leftInd int, rightInd int, destroyed *int) []int {
+	if leftInd < 0 || rightInd >= len(result) {
+		return result
+	}
+	if result[leftInd] > 0 && result[rightInd] < 0 {
+		if result[leftInd] == -result[rightInd] {
+			result = append(result[:leftInd], result[rightInd+1:]...)
+			*destroyed++
+			return result
+		}
+		if result[leftInd] > -result[rightInd] {
+			result = destroyRecursively(append(result[:rightInd], result[rightInd+1:]...), leftInd, rightInd, destroyed)
+			*destroyed++
+			return result
+		}
+		if result[leftInd] < -result[rightInd] {
+			result = destroyRecursively(append(result[:leftInd], result[rightInd:]...), leftInd-1, rightInd-1, destroyed)
+			*destroyed++
+			return result
+		}
+	}
+	return result
 }
