@@ -8,7 +8,7 @@ func main() {
 	fmt.Println(asteroidCollision([]int{1, 1, -1, -2}))
 }
 
-func asteroidCollision(asteroids []int) []int {
+func asteroidCollisionBad(asteroids []int) []int {
 	for i := 0; i < len(asteroids); {
 		if i == 0 {
 			i++
@@ -46,4 +46,33 @@ func destroyRecursively(result []int, leftInd int, rightInd int, destroyed *int)
 		}
 	}
 	return result
+}
+
+func asteroidCollision(asteroids []int) []int {
+	stack := []int{}
+	for _, v := range asteroids {
+		if len(stack) == 0 || v > 0 {
+			stack = append(stack, v)
+		} else {
+			for {
+				peek := stack[len(stack)-1]
+				if peek < 0 {
+					stack = append(stack, v)
+					break
+				} else if peek == -v {
+					stack = stack[:len(stack)-1]
+					break
+				} else if peek > -v {
+					break
+				} else {
+					stack = stack[:len(stack)-1]
+					if len(stack) == 0 {
+						stack = append(stack, v)
+						break
+					}
+				}
+			}
+		}
+	}
+	return stack
 }
