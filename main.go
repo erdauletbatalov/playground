@@ -3,7 +3,7 @@ package main
 import "fmt"
 
 func main() {
-	fmt.Println(removeStart("st*r*"))
+	fmt.Println(removeStart("st*r**"))
 }
 
 func removeStart(s string) string {
@@ -12,7 +12,13 @@ func removeStart(s string) string {
 		if isChar(val) {
 			result = append(result, val)
 		} else {
-			result = result[:len(result)-1]
+			switch len(result) {
+			case 0:
+				continue
+			default:
+				result = result[:len(result)-1]
+			}
+
 		}
 	}
 	return string(result)
