@@ -2,54 +2,46 @@ package main
 
 import "fmt"
 
-func main() {
-	fmt.Println(closeStrings("cabbba", "abbccc"))
+type F interface {
+	f()
 }
 
-func closeStrings(word1 string, word2 string) bool {
-	firstMap := make(map[rune]int)
-	var firstSum int
-	secondMap := make(map[rune]int)
-	var secondSum int
-	thirdMap := make(map[int]int)
-	forthMap := make(map[int]int)
+type S1 struct {
+	a int
+}
 
-	for _, val := range word1 {
-		firstMap[val]++
-	}
-	for _, val := range word2 {
-		secondMap[val]++
-	}
-	for key, val := range firstMap {
-		if _, ok := secondMap[key]; !ok {
-			return false
-		}
-		firstSum += val
-	}
-	for key, val := range secondMap {
-		if _, ok := firstMap[key]; !ok {
-			return false
-		}
-		secondSum += val
-	}
-	if firstSum != secondSum {
-		return false
-	}
-	for _, val := range firstMap {
-		thirdMap[val]++
-	}
-	for _, val := range secondMap {
-		forthMap[val]++
-	}
-	if len(firstMap) != len(secondMap) {
-		return false
-	}
-	for thirdKey, thirdVal := range thirdMap {
-		if forthVal, ok := forthMap[thirdKey]; ok && thirdVal == forthVal {
-			continue
-		}
-		return false
+func (s S1) f() {}
 
-	}
-	return true
+type S2 struct{}
+
+func (s *S2) f() {}
+
+func main() {
+
+	// s1 := []int{1, 2, 3}
+	// s2 := s1
+
+	s3 := struct{}{}
+	s4 := s3
+
+	s5 := S1{a: 1}
+	s6 := S2{}
+
+	fmt.Println(s5 == s6)
+	fmt.Println(s3 == s4)
+	// fmt.Println(s1 == s2)
+
+	// s1Val := S1{}
+	// s1Ptr := &S1{}
+	// s2Val := S2{}
+	// s2Ptr := &S2{}
+
+	// var i F
+	// i = s1Val
+	// i = s1Ptr
+	// i = s2Val
+	// i = s2Ptr
+
+	// fmt.Println(i)
+
 }
