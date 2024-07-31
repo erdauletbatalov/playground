@@ -1,0 +1,138 @@
+<html>
+
+<head>
+    <title>The Map</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js" crossorigin=""></script>
+    <script src="https://unpkg.com/leaflet-providers@1.0.13/leaflet-providers.js" crossorigin=""></script>
+</head>
+
+<body>
+    <!-- div для карты -->
+    <div id="mapid" style="height:100%"></div>
+    <script>
+        // Карта
+        var mymap = L.map('mapid',
+            { 'tap': false })
+            .setView([59.95184617254149, 30.30683755874634], 13)
+
+        // Слой карты с домами, улицами и т.п.
+        var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        }).addTo(mymap)
+
+        // Здесь хранятся те маркеры, что уже отобразили на карте
+        var alreadyloaded = {}
+        var popups = {}
+        // Функция для создания маркера на карте
+        function addObject(data) {
+            if (!(data.id in alreadyloaded)) {
+                /*
+                * Карта использует систему координат на шаре
+                * Tarantool хранит координаты на плоскости
+                * Конвертируем из одной системы в другую
+                */
+                var l = mymap.unproject(L.point(data['coordinates'][0], data['coordinates'][1]), 1)
+
+                var description = data['comment']
+                // Добавляем кнопку удаления маркера
+                description += `<br /><a href="#" onclick="removeObject('${data.id}')">Remove</a>`
+                // Создаем маркер
+                popups[data.id] = L.marker(l).addTo(mymap).bindPopup(description)
+                alreadyloaded[data.id] = data
+            }
+        }
+        // Обрабатываем json пришедший с сервера
+        function parse(array) {
+            array.forEach(addObject)
+        }
+        function errorResponse(error) {
+            alert('Error: ' + error)
+        }
+        function handleListResponse(res) {
+            res.json().then(parse).catch(errorResponse)
+        }
+
+        // Обрабатываем нажатие на карту
+        function onMapClick(e) {
+            var response = window.prompt('Что здесь?')
+            if (response != null) {
+                /*
+                * Карта использует систему координат на шаре
+                * Tarantool хранит координаты на плоскости
+                * Конвертируем из одной системы в другую
+                */
+                var p = mymap.project(e.latlng, 1)
+
+                var data = {
+                    "coordinates": [p.x, p.y],
+                    "comment": response,
+                }
+
+                // Отправляем запрос на сервер для создания маркера
+                fetch("/new", {
+                    method: "POST",
+                    body: JSON.stringify(data)
+                })
+                .then(handleListResponse)
+                .catch(errorResponse)
+            }
+        }
+        mymap.on('click', onMapClick)
+
+        function getObjects() { 
+            var bounds = mymap.getBounds()
+            var northeast = bounds.getNorthEast()
+            var southwest = bounds.getSouthWest()
+            var ne = mymap.project(northeast, 1)
+            var sw = mymap.project(southwest, 1)
+            var options = {
+                "rect": JSON.stringify([ne.x, ne.y, sw.x, sw.y]),
+            }
+
+            // Отправляем запрос на сервер с получением маркеров
+            fetch("/list?" + new URLSearchParams(options))
+                .then(handleListResponse)
+                .catch(errorResponse)
+        }
+
+        // Удаление маркера 
+        function removeObject(id) {
+            if (!(id in alreadyloaded)) {
+                alert(`Sorry point with ${id} not found`)
+                return
+            }
+            var data = alreadyloaded[id]
+
+            popups[id].remove()
+            delete alreadyloaded[id]
+            delete popups[id]
+
+            fetch("/remove", {
+                method: "POST",
+                body: JSON.stringify(data)
+            })
+            .catch(errorResponse)
+        }
+
+        // Загружаем комментарии при навигации по карте
+        var timerId = null
+        function onMapMove(e) {
+            if (timerId == null) {
+                timerId = setTimeout(function () {
+                    getObjects()
+                    timerId = null
+                }, 1000)
+            }
+        }
+        mymap.on('move', onMapMove)
+
+        timerId = setTimeout(function () {
+            getObjects()
+            timerId = null
+        }, 1000)
+    </script>
+</body>
+
+</html>
