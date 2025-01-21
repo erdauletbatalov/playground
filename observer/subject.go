@@ -1,7 +1,7 @@
 package main
 
-type Subject interface {
-	register(observer Observer)
-	deregister(observer Observer)
+type Publisher interface {
+	subscribe(observer Subscriber)
+	unsubscribe(observer Subscriber)
 	notifyAll()
 }

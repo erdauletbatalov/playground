@@ -3,9 +3,9 @@ package main
 import "fmt"
 
 type Item struct {
-	observerList []Observer
-	name         string
-	inStock      bool
+	subscriberList []Subscriber
+	name           string
+	inStock        bool
 }
 
 func newItem(name string) *Item {
@@ -18,27 +18,27 @@ func (i *Item) updateAvailability() {
 	i.inStock = true
 	i.notifyAll()
 }
-func (i *Item) register(o Observer) {
-	i.observerList = append(i.observerList, o)
+func (i *Item) subscribe(o Subscriber) {
+	i.subscriberList = append(i.subscriberList, o)
 }
 
-func (i *Item) deregister(o Observer) {
-	i.observerList = removeFromslice(i.observerList, o)
+func (i *Item) unsubscribe(o Subscriber) {
+	i.subscriberList = removeFromSlice(i.subscriberList, o)
 }
 
 func (i *Item) notifyAll() {
-	for _, observer := range i.observerList {
-		observer.update(i.name)
+	for _, subscriber := range i.subscriberList {
+		subscriber.update(i.name)
 	}
 }
 
-func removeFromslice(observerList []Observer, observerToRemove Observer) []Observer {
-	observerListLength := len(observerList)
-	for i, observer := range observerList {
-		if observerToRemove.getID() == observer.getID() {
-			observerList[observerListLength-1], observerList[i] = observerList[i], observerList[observerListLength-1]
-			return observerList[:observerListLength-1]
+func removeFromSlice(subList []Subscriber, subToRemove Subscriber) []Subscriber {
+	subListLen := len(subList)
+	for i, sub := range subList {
+		if subToRemove.getID() == sub.getID() {
+			subList[subListLen-1], subList[i] = subList[i], subList[subListLen-1]
+			return subList[:subListLen-1]
 		}
 	}
-	return observerList
+	return subList
 }
