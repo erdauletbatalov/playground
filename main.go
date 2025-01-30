@@ -22,82 +22,29 @@ func main() {
 //
 
 func predictPartyVictory(senate string) string {
-	s := giveRuneArr(senate)
-	if victory, ok := checkImmidiateVictory(s); ok {
-		return victory
+	var radiant, dire []int
+
+	for i := range senate {
+		if senate[i] == 'R' {
+			radiant = append(radiant, i)
+		} else {
+			dire = append(dire, i)
+		}
 	}
-	allSame := true
 
-	for i := 0; ; {
-		for j := i; j < len(s); {
-			if (s[i] != s[j]) && j != len(s) {
-				allSame = false
-				s = append(s[:j], s[j+1:]...)
-				break
-			}
-			if j == len(s)-1 {
-				for j := i; j >= 0; j-- {
-					if i == j {
-						continue
-					}
-					if (s[i] != s[j]) && j >= 0 {
-						allSame = false
-						s = append(s[:j], s[j+1:]...)
-						i--
-						break
-					}
-				}
-				break
-			}
-			j++
+	for len(radiant) > 0 && len(dire) > 0 {
+		if radiant[0] < dire[0] {
+			radiant = append(radiant, radiant[0]+len(senate))
+		} else {
+			dire = append(dire, dire[0]+len(senate))
 		}
-		if i >= len(s) {
-			i = 0
-			continue
-		}
-		if len(s) == 1 || allSame {
-			if allSame {
-				s = s[:1]
-			}
-			break
-		}
-
-		allSame = true
-
-		i++
+		radiant = radiant[1:]
+		dire = dire[1:]
 	}
-	if string(s) == "R" {
+
+	if len(radiant) > 0 {
 		return "Radiant"
 	} else {
 		return "Dire"
-	}
-}
-
-func giveRuneArr(s string) []rune {
-	var result []rune
-	for _, val := range s {
-		result = append(result, val)
-	}
-	return result
-}
-
-func checkImmidiateVictory(s []rune) (string, bool) {
-	if string(s) == "RDRDRDDRDRDRDRDRRDRDRDRDRDRDDDDRRDRDRDRDRDRDRDRRRRRDRDRDRDRDDDDDRDRDRDRDRDRDRDRRDRDRDRDRDRDRRDRDRDRDRDRDRDRDRRDRDRDRDRDRRD" {
-		return "Radiant", true
-	}
-	var radOrDire rune
-	for i, val := range s {
-		if i == 0 {
-			radOrDire = s[i]
-			continue
-		}
-		if val != radOrDire {
-			return "", false
-		}
-	}
-	if string(radOrDire) == "R" {
-		return "Radiant", true
-	} else {
-		return "Dire", true
 	}
 }
