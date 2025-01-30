@@ -3,10 +3,10 @@ package main
 import "fmt"
 
 func main() {
-	fmt.Println(removeStart("st*r**"))
+	fmt.Println(removeStars("st*r**d"))
 }
 
-func removeStart(s string) string {
+func removeStars(s string) string {
 	var result []rune
 	for _, val := range s {
 		if isChar(val) {
